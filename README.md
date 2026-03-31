@@ -40,17 +40,18 @@ Deployed using **Flask** and hosted on Render.
 
 ### 1️⃣ Clone the repository
 
-git clone https://github.com/dhruvXcode247/StudoPredi
-cd StudoPredi2
+    git clone https://github.com/dhruvXcode247/StudoPredi
+
+    cd StudoPredi2
 
 ### 2️⃣ Install dependencies
 
-pip install -r requirements.txt
+    pip install -r requirements.txt
 
 ### 3️⃣ Run the application
 
-python app.py
+    python app.py
 
 ### 4️⃣ Open in browser
 
-http://127.0.0.1:5000/
+    http://127.0.0.1:5000/
