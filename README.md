@@ -1,4 +1,4 @@
-# 🎓 Student Performance Prediction System
+# 🎓 StudoPredi - Student Performance Prediction System
 
 A Machine Learning web application that predicts a student's performance category (**Excellent, Average, Weak**) based on academic and activity-related features.
 
