@@ -36,7 +36,8 @@ def dashboard():
     if "user" not in session:
         return redirect("/")
 
-    file_path = "Cleaned_student_data_.csv"
+    os.makedirs("tmp", exist_ok=True)
+    file_path = os.path.join("tmp", "Cleaned_student_data_.csv")
 
     if os.path.isfile(file_path):
         df = pd.read_csv(file_path)
@@ -48,12 +49,21 @@ def dashboard():
     average = (df["Grading"] == "Average").sum() if not df.empty else 0
     weak = (df["Grading"] == "Weak").sum() if not df.empty else 0
 
+    # 🔥 Chart data
+    chart_labels = ["Excellent", "Average", "Weak"]
+    chart_values = [int(excellent), int(average), int(weak)]
+
+    prediction_text = session.pop("prediction", None)
+
     return render_template(
         "dashboard.html",
         total=total,
         excellent=excellent,
         average=average,
-        weak=weak
+        weak=weak,
+        prediction_text=prediction_text,
+        chart_labels=chart_labels,
+        chart_values=chart_values
     )
 
 
@@ -84,25 +94,29 @@ def predict():
         "Grading": prediction
     }
 
-    file_path = "Cleaned_student_data_.csv"
+    os.makedirs("tmp", exist_ok=True)
+    file_path = os.path.join("tmp", "Cleaned_student_data_.csv")
 
-    if os.path.isfile(file_path):
-        df = pd.read_csv(file_path)
-        df["StudentID"] = df["StudentID"].astype(str)
+    # create file if not exists
+    if not os.path.exists(file_path):
+        df = pd.DataFrame(columns=new_data.keys())
+        df.to_csv(file_path, index=False)
 
-        if str(student_id) in df["StudentID"].values:
-            mask = df["StudentID"] == str(student_id)
-            for col, val in new_data.items():
-                df.loc[mask, col] = val
-        else:
-            df = pd.concat([df, pd.DataFrame([new_data])], ignore_index=True)
+    df = pd.read_csv(file_path)
+    df["StudentID"] = df["StudentID"].astype(str)
+
+    # update or insert
+    if str(student_id) in df["StudentID"].values:
+        mask = df["StudentID"] == str(student_id)
+        for col, val in new_data.items():
+            df.loc[mask, col] = val
     else:
-        df = pd.DataFrame([new_data])
+        df = pd.concat([df, pd.DataFrame([new_data])], ignore_index=True)
 
     df.to_csv(file_path, index=False)
 
-    # ===== HISTORY TRACKING =====
-    history_file = "history.csv"
+    # ================= HISTORY =================
+    history_file = os.path.join("tmp", "history.csv")
 
     history_row = {
         "StudentID": student_id,
@@ -118,6 +132,8 @@ def predict():
 
     hist.to_csv(history_file, index=False)
 
+    session["prediction"] = f"Predicted Grade: {prediction} for Student ID: {student_id}"
+
     return redirect("/dashboard")
 
 
@@ -129,12 +145,38 @@ def search():
 
     student_id = request.form["StudentID"]
 
-    df = pd.read_csv("Cleaned_student_data_.csv")
-    df["StudentID"] = df["StudentID"].astype(str)
+    os.makedirs("tmp", exist_ok=True)
+    file_path = os.path.join("tmp", "Cleaned_student_data_.csv")
 
-    result = df[df["StudentID"] == student_id]
+    if os.path.isfile(file_path):
+        df = pd.read_csv(file_path)
+        df["StudentID"] = df["StudentID"].astype(str)
+        result = df[df["StudentID"] == student_id]
+    else:
+        df = pd.DataFrame()
+        result = pd.DataFrame()
 
-    return render_template("dashboard.html", result=result.to_dict(orient="records"))
+    if not df.empty and "Grading" in df.columns:
+        total = int(len(df))
+        excellent = int((df["Grading"] == "Excellent").sum())
+        average = int((df["Grading"] == "Average").sum())
+        weak = int((df["Grading"] == "Weak").sum())
+    else:
+        total = excellent = average = weak = 0
+
+    chart_labels = ["Excellent", "Average", "Weak"]
+    chart_values = [excellent, average, weak]
+
+    return render_template(
+        "dashboard.html",
+        total=total,
+        excellent=excellent,
+        average=average,
+        weak=weak,
+        chart_labels=chart_labels,
+        chart_values=chart_values,
+        result=result.to_dict(orient="records")
+    )
 
 
 # ================= LOGOUT =================

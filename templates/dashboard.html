@@ -106,6 +106,7 @@
             text-decoration: none;
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
@@ -115,10 +116,24 @@
     <a href="/logout" class="logout">Logout</a>
 </header>
 
+{% if prediction_text %}
+    <div style="
+        background: #d4edda;
+        color: #155724;
+        padding: 15px;
+        margin: 20px;
+        border-radius: 10px;
+        font-weight: bold;
+        text-align: center;">
+        {{ prediction_text }}
+    </div>
+{% endif %}
+
 <div class="container">
 
-    <!-- 🔹 STATS -->
+    <!-- STATS -->
     <div class="cards">
+        
         <div class="card">
             <h2>{{ total }}</h2>
             <p>Total Students</p>
@@ -180,7 +195,44 @@
         {% endif %}
     </div>
 
-</div>
+    <div class="section">
+        <h3>📊 Performance Analytics</h3>
+        <canvas id="myChart"></canvas>
+    </div>
 
+</div>
+<script>
+    const labels = {{ chart_labels | tojson }};
+    const data = {{ chart_values | tojson }};
+
+    const ctx = document.getElementById('myChart').getContext('2d');
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Student Count',
+                data: data,
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: 'black'
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
 </body>
 </html>
